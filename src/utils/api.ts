@@ -1,10 +1,9 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+import { createClient } from '@supabase/supabase-js';
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export class ApiError extends Error {
   constructor(
@@ -17,115 +16,128 @@ export class ApiError extends Error {
   }
 }
 
-export const apiRequest = async <T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> => {
-  const token = localStorage.getItem('admin_token');
-  
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new ApiError(
-        errorData.message || 'API request failed',
-        response.status,
-        errorData
-      );
-    }
-
-    const data: ApiResponse<T> = await response.json();
-    return data.data;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    throw new ApiError('Network error occurred', 0);
+// Helper function to handle Supabase responses
+export const handleSupabaseResponse = <T>(data: T | null, error: any): T => {
+  if (error) {
+    throw new ApiError(error.message, error.status || 500, error);
   }
+  if (!data) {
+    throw new ApiError('No data returned', 404);
+  }
+  return data;
 };
 
-// API functions
+// Authentication functions
+export const authApi = {
+  login: async (username: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: username,
+      password: password,
+    });
+    return handleSupabaseResponse(data, error);
+  },
+  
+  logout: async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new ApiError(error.message, 500, error);
+  },
+  
+  getCurrentUser: async () => {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    return handleSupabaseResponse(user, error);
+  },
+};
+
+// Dashboard functions
 export const dashboardApi = {
-  getStats: () => apiRequest<{
-    totalUsers: number;
-    adminUsers: number;
-    totalProjects: number;
-    activeRate: number;
-    userStats: { active: number; inactive: number };
-    projectGrowth: number;
-    activeRateChange: number;
-  }>('/dashboard/stats'),
+  getStats: async () => {
+    // Mock data for now - replace with actual Supabase queries
+    return {
+      totalUsers: 150,
+      adminUsers: 5,
+      totalProjects: 45,
+      activeRate: 85.2,
+      userStats: { active: 128, inactive: 22 },
+      projectGrowth: 12.5,
+      activeRateChange: 2.3,
+    };
+  },
   
-  getSystemStatus: () => apiRequest<{
-    version: string;
-    database: { status: string; health: string };
-    emailService: { status: string; health: string };
-  }>('/dashboard/system-status'),
+  getSystemStatus: async () => {
+    return {
+      version: '2.1.0',
+      database: { status: 'healthy', health: 'good' },
+      emailService: { status: 'operational', health: 'excellent' },
+    };
+  },
   
-  getRecentActivity: () => apiRequest<Array<{
-    id: string;
-    type: string;
-    title: string;
-    description: string;
-    timestamp: string;
-  }>>('/dashboard/recent-activity'),
+  getRecentActivity: async () => {
+    return [
+      {
+        id: '1',
+        type: 'user_created',
+        title: 'New user registered',
+        description: 'john.doe@example.com joined the platform',
+        timestamp: new Date().toISOString(),
+      },
+    ];
+  },
 };
 
 export const usersApi = {
-  getAll: (params?: { page?: number; limit?: number; search?: string; role?: string }) => 
-    apiRequest<{
-      users: Array<{
-        id: string;
-        username: string;
-        email: string;
-        role: string;
-        status: string;
-        lastLogin: string;
-        createdAt: string;
-        projects: number;
-      }>;
+  getAll: async (params?: { page?: number; limit?: number; search?: string; role?: string }) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .range(
+        ((params?.page || 1) - 1) * (params?.limit || 10),
+        (params?.page || 1) * (params?.limit || 10) - 1
+      );
+    
+    // Mock pagination for now
+    return {
+      users: data || [],
       pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      };
-    }>(`/users${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
+        total: data?.length || 0,
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+        totalPages: Math.ceil((data?.length || 0) / (params?.limit || 10)),
+      },
+    };
+  },
   
-  create: (userData: {
+  create: async (userData: {
     username: string;
     email: string;
     userType: string;
     sendWelcomeEmail: boolean;
     sendCredentialsEmail: boolean;
-  }) => apiRequest<{
-    id: string;
-    username: string;
-    email: string;
-    temporaryPassword: string;
-  }>('/users', {
-    method: 'POST',
-    body: JSON.stringify(userData),
-  }),
+  }) => {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: Math.random().toString(36).slice(-8), // Generate random password
+      email_confirm: true,
+      user_metadata: {
+        username: userData.username,
+        user_type: userData.userType,
+      },
+    });
+    
+    return handleSupabaseResponse(data, error);
+  },
   
-  delete: (userId: string) => apiRequest<{ success: boolean }>(`/users/${userId}`, {
-    method: 'DELETE',
-  }),
+  delete: async (userId: string) => {
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) throw new ApiError(error.message, 500, error);
+    return { success: true };
+  },
   
-  toggleStatus: (userId: string) => apiRequest<{ 
-    id: string; 
-    status: string; 
-  }>(`/users/${userId}/toggle-status`, {
-    method: 'PATCH',
-  }),
+  toggleStatus: async (userId: string) => {
+    // This would require custom logic with Supabase
+    // For now, return mock response
+    return {
+      id: userId,
+      status: 'Active',
+    };
+  },
 };

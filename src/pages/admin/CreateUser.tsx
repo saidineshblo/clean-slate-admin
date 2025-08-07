@@ -41,7 +41,7 @@ export default function CreateUser() {
       
       toast({
         title: "User Created Successfully",
-        description: `User ${response.username} has been created with temporary password.`,
+        description: `User has been created successfully.`,
       });
 
       // Navigate back to user management
