@@ -49,22 +49,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (username: string, password: string): Promise<void> => {
     try {
-      // For demo purposes, accept any username without password validation
-      const mockUser = {
-        id: '1',
-        username: username,
-        email: username.includes('@') ? username : `${username}@admin.com`,
-        role: 'admin',
-      };
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login failed');
+      }
+
+      const data = await response.json();
       
-      const mockToken = `mock-token-${Date.now()}`;
-      
-      setToken(mockToken);
-      setUser(mockUser);
+      setToken(data.token);
+      setUser(data.user);
       
       // Store in localStorage
-      localStorage.setItem('admin_token', mockToken);
-      localStorage.setItem('admin_user', JSON.stringify(mockUser));
+      localStorage.setItem('admin_token', data.token);
+      localStorage.setItem('admin_user', JSON.stringify(data.user));
     } catch (error) {
       throw error;
     }

@@ -33,11 +33,11 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic validation - only check username
-    if (!formData.username) {
+    // Basic validation
+    if (!formData.username || !formData.password) {
       toast({
         title: "Validation Error",
-        description: "Username is required.",
+        description: "Username and password are required.",
         variant: "destructive",
       });
       setIsLoading(false);
