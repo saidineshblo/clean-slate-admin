@@ -23,6 +23,9 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   const token = localStorage.getItem('admin_token');
   
+  console.log('Making API request to:', `${API_BASE_URL}${endpoint}`);
+  console.log('Auth token available:', !!token);
+  
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -35,18 +38,23 @@ export const apiRequest = async <T>(
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
+    console.log('API Response status:', response.status);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
-        errorData.message || 'API request failed',
+        errorData.message || `API request failed with status ${response.status}`,
         response.status,
         errorData
       );
     }
 
-    const data: ApiResponse<T> = await response.json();
-    return data.data;
+    const data = await response.json();
+    console.log('API Response data:', data);
+    // Your API returns data directly, not wrapped in an ApiResponse structure
+    return data;
   } catch (error) {
+    console.error('API Request error:', error);
     if (error instanceof ApiError) {
       throw error;
     }
