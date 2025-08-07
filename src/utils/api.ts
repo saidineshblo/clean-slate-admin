@@ -97,20 +97,24 @@ export const authApi = {
 // Dashboard functions
 export const dashboardApi = {
   getStats: () => apiRequest<{
-    totalUsers: number;
-    adminUsers: number;
-    totalProjects: number;
-    activeRate: number;
-    userStats: { active: number; inactive: number };
-    projectGrowth: number;
-    activeRateChange: number;
-  }>('/dashboard/stats'),
+    total_users: number;
+    active_users: number;
+    inactive_users: number;
+    admin_users: number;
+    total_projects: number;
+    projects_this_month: number;
+    users_this_month: number;
+    avg_projects_per_user: number;
+  }>('/admin/dashboard'),
   
   getSystemStatus: () => apiRequest<{
-    version: string;
-    database: { status: string; health: string };
-    emailService: { status: string; health: string };
-  }>('/dashboard/system-status'),
+    platform_version: string;
+    database_status: string;
+    email_service_status: string;
+    aws_ses_quota: any;
+    uptime: string;
+    active_sessions: number;
+  }>('/admin/system-info'),
   
   getRecentActivity: () => apiRequest<Array<{
     id: string;
@@ -118,54 +122,76 @@ export const dashboardApi = {
     title: string;
     description: string;
     timestamp: string;
-  }>>('/dashboard/recent-activity'),
+  }>>('/admin/recent-activity'),
 };
 
 export const usersApi = {
-  getAll: (params?: { page?: number; limit?: number; search?: string; role?: string }) => 
+  getAll: (params?: { 
+    page?: number; 
+    per_page?: number; 
+    query?: string; 
+    is_active?: boolean;
+    is_superuser?: boolean;
+    sort_by?: string;
+    sort_order?: string;
+  }) => 
     apiRequest<{
       users: Array<{
         id: string;
         username: string;
         email: string;
-        role: string;
-        status: string;
-        lastLogin: string;
-        createdAt: string;
-        projects: number;
+        is_active: boolean;
+        is_superuser: boolean;
+        created_at: string;
+        updated_at: string;
+        project_count: number;
+        last_login: string;
       }>;
-      pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      };
-    }>(`/users${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
+      total: number;
+      page: number;
+      per_page: number;
+      has_next: boolean;
+      has_prev: boolean;
+      total_pages: number;
+    }>(`/admin/users${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
   
   create: (userData: {
     username: string;
     email: string;
-    userType: string;
-    sendWelcomeEmail: boolean;
-    sendCredentialsEmail: boolean;
+    is_superuser: boolean;
+    send_email: boolean;
   }) => apiRequest<{
-    id: string;
-    username: string;
-    email: string;
-    temporaryPassword: string;
-  }>('/users', {
+    user: {
+      id: string;
+      username: string;
+      email: string;
+      is_active: boolean;
+      is_superuser: boolean;
+      created_at: string;
+      updated_at: string;
+    };
+    temporary_password_sent: boolean;
+    message: string;
+  }>('/admin/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   }),
   
-  delete: (userId: string) => apiRequest<{ success: boolean }>(`/users/${userId}`, {
+  delete: (userId: string) => apiRequest<{
+    success: boolean;
+    message: string;
+    affected_users: number;
+  }>(`/admin/users/${userId}`, {
     method: 'DELETE',
   }),
   
-  toggleStatus: (userId: string) => apiRequest<{ 
-    id: string; 
-    status: string; 
-  }>(`/users/${userId}/toggle-status`, {
-    method: 'PATCH',
-  }),
+  toggleStatus: (userId: string, data: { is_active: boolean; reason?: string }) => 
+    apiRequest<{
+      success: boolean;
+      message: string;
+      affected_users: number;
+    }>(`/admin/users/${userId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 };

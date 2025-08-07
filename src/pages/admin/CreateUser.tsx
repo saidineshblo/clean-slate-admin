@@ -14,9 +14,8 @@ export default function CreateUser() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    userType: "regular",
-    sendWelcomeEmail: false,
-    sendCredentialsEmail: false,
+    is_superuser: false,
+    send_email: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -135,8 +134,8 @@ export default function CreateUser() {
             </CardHeader>
             <CardContent>
               <RadioGroup
-                value={formData.userType}
-                onValueChange={(value) => handleInputChange("userType", value)}
+                value={formData.is_superuser ? "admin" : "regular"}
+                onValueChange={(value) => handleInputChange("is_superuser", value === "admin")}
                 className="space-y-4"
               >
                 <div className="flex items-start space-x-3 p-4 border rounded-lg">
@@ -178,22 +177,11 @@ export default function CreateUser() {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="welcome-email"
-                  checked={formData.sendWelcomeEmail}
-                  onCheckedChange={(checked) => handleInputChange("sendWelcomeEmail", !!checked)}
+                  checked={formData.send_email}
+                  onCheckedChange={(checked) => handleInputChange("send_email", !!checked)}
                 />
                 <Label htmlFor="welcome-email" className="text-sm">
                   Send welcome email with login credentials
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="credentials-email"
-                  checked={formData.sendCredentialsEmail}
-                  onCheckedChange={(checked) => handleInputChange("sendCredentialsEmail", !!checked)}
-                />
-                <Label htmlFor="credentials-email" className="text-sm">
-                  User will receive their username and temporary password via email
                 </Label>
               </div>
             </CardContent>

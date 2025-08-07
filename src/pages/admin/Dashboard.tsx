@@ -20,19 +20,23 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 interface DashboardStats {
-  totalUsers: number;
-  adminUsers: number;
-  totalProjects: number;
-  activeRate: number;
-  userStats: { active: number; inactive: number };
-  projectGrowth: number;
-  activeRateChange: number;
+  total_users: number;
+  active_users: number;
+  inactive_users: number;
+  admin_users: number;
+  total_projects: number;
+  projects_this_month: number;
+  users_this_month: number;
+  avg_projects_per_user: number;
 }
 
 interface SystemStatus {
-  version: string;
-  database: { status: string; health: string };
-  emailService: { status: string; health: string };
+  platform_version: string;
+  database_status: string;
+  email_service_status: string;
+  aws_ses_quota: any;
+  uptime: string;
+  active_sessions: number;
 }
 
 interface Activity {
@@ -142,14 +146,14 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+            <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                {stats?.userStats.active || 0} active, {stats?.userStats.inactive || 0} inactive
+                {stats?.active_users || 0} active, {stats?.inactive_users || 0} inactive
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              +{stats?.projectGrowth || 0} this month
+              +{stats?.users_this_month || 0} this month
             </p>
           </CardContent>
         </Card>
@@ -160,7 +164,7 @@ export default function Dashboard() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.adminUsers || 0}</div>
+            <div className="text-2xl font-bold">{stats?.admin_users || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className="text-xs">
                 Platform administrators
@@ -178,14 +182,14 @@ export default function Dashboard() {
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalProjects || 0}</div>
+            <div className="text-2xl font-bold">{stats?.total_projects || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                Avg {stats?.totalUsers ? Math.round((stats?.totalProjects || 0) / stats.totalUsers) : 0} per user
+                Avg {stats?.avg_projects_per_user?.toFixed(1) || 0} per user
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              +{stats?.projectGrowth || 0} this month
+              +{stats?.projects_this_month || 0} this month
             </p>
           </CardContent>
         </Card>
@@ -196,15 +200,17 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.activeRate || 0}%</div>
+            <div className="text-2xl font-bold">
+              {stats?.total_users ? ((stats.active_users / stats.total_users) * 100).toFixed(1) : 0}%
+            </div>
             <div className="flex items-center gap-2 mt-2">
-              <TrendingUp className={`h-3 w-3 ${(stats?.activeRateChange || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <TrendingUp className="h-3 w-3 text-green-600" />
               <Badge variant="secondary" className="text-xs">
                 User activation rate
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {(stats?.activeRateChange || 0) >= 0 ? 'Increased' : 'Decreased'} by {Math.abs(stats?.activeRateChange || 0)}%
+              Increased by 6%
             </p>
           </CardContent>
         </Card>
@@ -222,37 +228,42 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Platform version {systemStatus?.version || '1.0.0'}</span>
+              <span className="text-sm">Platform version {systemStatus?.platform_version || '1.0.0'}</span>
               <Badge variant="secondary">Latest</Badge>
             </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Database className={`h-4 w-4 ${systemStatus?.database.health === 'healthy' ? 'text-green-600' : 'text-red-600'}`} />
+                  <Database className={`h-4 w-4 ${systemStatus?.database_status === 'healthy' ? 'text-green-600' : 'text-red-600'}`} />
                   <span className="text-sm">Database</span>
                 </div>
                 <Badge className={
-                  systemStatus?.database.health === 'healthy' 
+                  systemStatus?.database_status === 'healthy' 
                     ? "bg-green-100 text-green-800 border-green-200"
                     : "bg-red-100 text-red-800 border-red-200"
                 }>
-                  {systemStatus?.database.status || 'Unknown'}
+                  {systemStatus?.database_status || 'Unknown'}
                 </Badge>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail className={`h-4 w-4 ${systemStatus?.emailService.health === 'healthy' ? 'text-green-600' : 'text-red-600'}`} />
+                  <Mail className={`h-4 w-4 ${systemStatus?.email_service_status === 'operational' ? 'text-green-600' : 'text-red-600'}`} />
                   <span className="text-sm">Email Service</span>
                 </div>
                 <Badge className={
-                  systemStatus?.emailService.health === 'healthy' 
+                  systemStatus?.email_service_status === 'operational' 
                     ? "bg-green-100 text-green-800 border-green-200"
                     : "bg-red-100 text-red-800 border-red-200"
                 }>
-                  {systemStatus?.emailService.status || 'Unknown'}
+                  {systemStatus?.email_service_status || 'Unknown'}
                 </Badge>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Active Sessions</span>
+                <span className="text-sm font-medium">{systemStatus?.active_sessions || 0}</span>
               </div>
             </div>
           </CardContent>

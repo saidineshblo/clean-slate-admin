@@ -44,21 +44,22 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: string;
-  status: string;
-  lastLogin: string;
-  createdAt: string;
-  projects: number;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  updated_at: string;
+  project_count: number;
+  last_login: string;
 }
 
 interface UsersResponse {
   users: User[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  per_page: number;
+  has_next: boolean;
+  has_prev: boolean;
+  total_pages: number;
 }
 
 export default function UserManagement() {
@@ -68,8 +69,8 @@ export default function UserManagement() {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 10,
-    totalPages: 0,
+    per_page: 10,
+    total_pages: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -77,14 +78,19 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      const params: any = { page: pagination.page, limit: pagination.limit };
+      const params: any = { page: pagination.page, per_page: pagination.per_page };
       
-      if (searchTerm) params.search = searchTerm;
-      if (statusFilter !== "All Users") params.role = statusFilter.toLowerCase();
+      if (searchTerm) params.query = searchTerm;
+      if (statusFilter !== "All Users") params.is_active = statusFilter === "Active";
       
       const response = await usersApi.getAll(params);
       setUsers(response.users);
-      setPagination(response.pagination);
+      setPagination({
+        total: response.total,
+        page: response.page,
+        per_page: response.per_page,
+        total_pages: response.total_pages,
+      });
     } catch (error: any) {
       toast({
         title: "Error Loading Users",
@@ -127,7 +133,11 @@ export default function UserManagement() {
 
   const handleToggleStatus = async (userId: string) => {
     try {
-      await usersApi.toggleStatus(userId);
+      const user = users.find(u => u.id === userId);
+      await usersApi.toggleStatus(userId, { 
+        is_active: !user?.is_active,
+        reason: "Admin action"
+      });
       toast({
         title: "Status Updated",
         description: "User status has been updated.",
@@ -142,17 +152,14 @@ export default function UserManagement() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
-      case "Inactive":
-        return <Badge variant="secondary">Inactive</Badge>;
-      case "Admin":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Admin</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const getStatusBadge = (user: User) => {
+    if (user.is_superuser) {
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Admin</Badge>;
     }
+    if (user.is_active) {
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
+    }
+    return <Badge variant="secondary">Inactive</Badge>;
   };
 
   return (
@@ -274,14 +281,14 @@ export default function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(user.status)}
+                        {getStatusBadge(user)}
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{user.projects} projects</span>
+                        <span className="font-medium">{user.project_count} projects</span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {new Date(user.created_at).toLocaleDateString()}
                         </span>
                       </TableCell>
                       <TableCell>
