@@ -21,14 +21,45 @@ export default function CreateUser() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const validateUsername = (username: string): string | null => {
+    if (!username) return "Username is required";
+    if (username.length < 3) return "Username must be at least 3 characters long";
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return "Username can only contain letters, numbers, hyphens, and underscores";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate username
+    const usernameError = validateUsername(formData.username);
+    if (usernameError) {
+      toast({
+        title: "Username Validation Error",
+        description: usernameError,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Basic validation
-    if (!formData.username || !formData.email) {
+    if (!formData.email) {
       toast({
         title: "Validation Error",
-        description: "Username and email are required fields.",
+        description: "Email is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Email Validation Error",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
@@ -46,9 +77,24 @@ export default function CreateUser() {
       // Navigate back to user management
       navigate("/admin/users");
     } catch (error: any) {
+      let errorMessage = "Failed to create user. Please try again.";
+      
+      // Handle API validation errors
+      if (error.response && error.response.detail) {
+        if (Array.isArray(error.response.detail)) {
+          // Extract validation error messages
+          const validationErrors = error.response.detail.map((err: any) => err.msg).join(", ");
+          errorMessage = validationErrors;
+        } else if (typeof error.response.detail === 'string') {
+          errorMessage = error.response.detail;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Error Creating User",
-        description: error.message || "Failed to create user. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -61,6 +107,15 @@ export default function CreateUser() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const handleUsernameChange = (value: string) => {
+    handleInputChange("username", value);
+    // Real-time validation for username
+    const error = validateUsername(value);
+    setUsernameError(error);
   };
 
   return (
@@ -99,12 +154,17 @@ export default function CreateUser() {
                   id="username"
                   placeholder="Enter username (letters, numbers, hyphens, underscores)"
                   value={formData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
-                  className="mt-1"
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  className={`mt-1 ${usernameError ? "border-destructive" : ""}`}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Username will be converted to lowercase automatically
-                </p>
+                {usernameError && (
+                  <p className="text-xs text-destructive mt-1">{usernameError}</p>
+                )}
+                {!usernameError && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Username will be converted to lowercase automatically
+                  </p>
+                )}
               </div>
 
               <div>
