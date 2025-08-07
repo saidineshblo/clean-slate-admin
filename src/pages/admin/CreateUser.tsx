@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, User, Mail, Shield, Bell, AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { usersApi } from "@/utils/api";
 
 export default function CreateUser() {
   const [formData, setFormData] = useState({
@@ -17,9 +18,11 @@ export default function CreateUser() {
     sendWelcomeEmail: false,
     sendCredentialsEmail: false,
   });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -32,20 +35,26 @@ export default function CreateUser() {
       return;
     }
 
-    // Simulate user creation
-    toast({
-      title: "User Created Successfully",
-      description: `User ${formData.username} has been created and will receive login credentials via email.`,
-    });
+    try {
+      setIsLoading(true);
+      const response = await usersApi.create(formData);
+      
+      toast({
+        title: "User Created Successfully",
+        description: `User ${response.username} has been created with temporary password.`,
+      });
 
-    // Reset form
-    setFormData({
-      username: "",
-      email: "",
-      userType: "regular",
-      sendWelcomeEmail: false,
-      sendCredentialsEmail: false,
-    });
+      // Navigate back to user management
+      navigate("/admin/users");
+    } catch (error: any) {
+      toast({
+        title: "Error Creating User",
+        description: error.message || "Failed to create user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -210,11 +219,11 @@ export default function CreateUser() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <Button type="submit" className="flex-1 sm:flex-none">
+            <Button type="submit" className="flex-1 sm:flex-none" disabled={isLoading}>
               <User className="h-4 w-4 mr-2" />
-              Create User
+              {isLoading ? "Creating User..." : "Create User"}
             </Button>
-            <Button type="button" variant="outline" asChild>
+            <Button type="button" variant="outline" asChild disabled={isLoading}>
               <Link to="/admin/users">Cancel</Link>
             </Button>
           </div>

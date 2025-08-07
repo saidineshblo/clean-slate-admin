@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,104 +37,109 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
+import { usersApi } from "@/utils/api";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data
-const users = [
-  { 
-    id: 1, 
-    username: "test123", 
-    email: "test@test.com", 
-    status: "Active", 
-    projects: 0, 
-    created: "Invalid Date",
-    role: "User"
-  },
-  { 
-    id: 2, 
-    username: "testuser_170947", 
-    email: "test_170947@example.com", 
-    status: "Inactive", 
-    projects: 0, 
-    created: "Invalid Date",
-    role: "User"
-  },
-  { 
-    id: 3, 
-    username: "test", 
-    email: "test@test.com", 
-    status: "Inactive", 
-    projects: 0, 
-    created: "Invalid Date",
-    role: "User"
-  },
-  { 
-    id: 4, 
-    username: "testuser_160448", 
-    email: "test_160448@example.com", 
-    status: "Inactive", 
-    projects: 0, 
-    created: "Invalid Date",
-    role: "User"
-  },
-  { 
-    id: 5, 
-    username: "admin", 
-    email: "admin@bobrik.app", 
-    status: "Admin", 
-    projects: 0, 
-    created: "Invalid Date",
-    role: "Admin"
-  },
-  { 
-    id: 6, 
-    username: "studioslo", 
-    email: "user@example.com", 
-    status: "Active", 
-    projects: 9, 
-    created: "Invalid Date",
-    role: "User"
-  },
-  { 
-    id: 7, 
-    username: "test", 
-    email: "test@gmail.com", 
-    status: "Active", 
-    projects: 5, 
-    created: "Invalid Date",
-    role: "User"
-  },
-];
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  status: string;
+  lastLogin: string;
+  createdAt: string;
+  projects: number;
+}
+
+interface UsersResponse {
+  users: User[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Users");
-  const [filteredUsers, setFilteredUsers] = useState(users);
+  const [users, setUsers] = useState<User[]>([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const params: any = { page: pagination.page, limit: pagination.limit };
+      
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter !== "All Users") params.role = statusFilter.toLowerCase();
+      
+      const response = await usersApi.getAll(params);
+      setUsers(response.users);
+      setPagination(response.pagination);
+    } catch (error: any) {
+      toast({
+        title: "Error Loading Users",
+        description: error.message || "Failed to load users",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [searchTerm, statusFilter, pagination.page]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    filterUsers(value, statusFilter);
   };
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value);
-    filterUsers(searchTerm, value);
   };
 
-  const filterUsers = (search: string, status: string) => {
-    let filtered = users;
-    
-    if (search) {
-      filtered = filtered.filter(user => 
-        user.username.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
-      );
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await usersApi.delete(userId);
+      toast({
+        title: "User Deleted",
+        description: "User has been successfully deleted.",
+      });
+      fetchUsers(); // Refresh the list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
     }
-    
-    if (status !== "All Users") {
-      filtered = filtered.filter(user => user.status === status);
+  };
+
+  const handleToggleStatus = async (userId: string) => {
+    try {
+      await usersApi.toggleStatus(userId);
+      toast({
+        title: "Status Updated",
+        description: "User status has been updated.",
+      });
+      fetchUsers(); // Refresh the list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user status",
+        variant: "destructive",
+      });
     }
-    
-    setFilteredUsers(filtered);
   };
 
   const getStatusBadge = (status: string) => {
@@ -156,7 +161,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-          <p className="text-muted-foreground mt-1">{users.length} total users</p>
+          <p className="text-muted-foreground mt-1">{pagination.total} total users</p>
         </div>
         <Button asChild>
           <Link to="/admin/users/create">
@@ -208,7 +213,7 @@ export default function UserManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              Users ({filteredUsers.length})
+              Users ({users.length})
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm">
@@ -218,7 +223,7 @@ export default function UserManagement() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Showing {filteredUsers.length} of {users.length} users
+            Showing {users.length} of {pagination.total} users
           </p>
         </CardHeader>
         <CardContent>
@@ -234,57 +239,88 @@ export default function UserManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          <span className="text-sm font-medium">
-                            {user.username.charAt(0).toUpperCase()}
-                          </span>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted animate-pulse"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
+                            <div className="h-3 w-32 bg-muted animate-pulse rounded"></div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{user.username}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                      </TableCell>
+                      <TableCell><div className="h-4 w-16 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell><div className="h-4 w-8 bg-muted animate-pulse rounded"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : users.length > 0 ? (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-sm font-medium">
+                              {user.username.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{user.username}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(user.status)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{user.projects} projects</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">{user.created}</span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Send Email
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(user.status)}
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{user.projects} projects</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Toggle Status
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Email
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No users found
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,103 @@ import {
   TrendingUp,
   RefreshCw
 } from "lucide-react";
+import { dashboardApi } from "@/utils/api";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+
+interface DashboardStats {
+  totalUsers: number;
+  adminUsers: number;
+  totalProjects: number;
+  activeRate: number;
+  userStats: { active: number; inactive: number };
+  projectGrowth: number;
+  activeRateChange: number;
+}
+
+interface SystemStatus {
+  version: string;
+  database: { status: string; health: string };
+  emailService: { status: string; health: string };
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+}
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const [statsData, statusData, activityData] = await Promise.all([
+        dashboardApi.getStats(),
+        dashboardApi.getSystemStatus(),
+        dashboardApi.getRecentActivity(),
+      ]);
+      
+      setStats(statsData);
+      setSystemStatus(statusData);
+      setRecentActivity(activityData);
+    } catch (error: any) {
+      toast({
+        title: "Error Loading Dashboard",
+        description: error.message || "Failed to load dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const handleRefresh = () => {
+    fetchDashboardData();
+    toast({
+      title: "Dashboard Refreshed",
+      description: "Data has been updated successfully.",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Loading...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
+                <div className="h-4 w-4 bg-muted animate-pulse rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted animate-pulse rounded mb-2"></div>
+                <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -25,13 +121,15 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Welcome back, admin</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Create User
+          <Button size="sm" asChild>
+            <Link to="/admin/users/create">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Create User
+            </Link>
           </Button>
         </div>
       </div>
@@ -44,14 +142,14 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">7</div>
+            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                4 active, 3 inactive
+                {stats?.userStats.active || 0} active, {stats?.userStats.inactive || 0} inactive
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              +5 this month
+              +{stats?.projectGrowth || 0} this month
             </p>
           </CardContent>
         </Card>
@@ -62,7 +160,7 @@ export default function Dashboard() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{stats?.adminUsers || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className="text-xs">
                 Platform administrators
@@ -80,14 +178,14 @@ export default function Dashboard() {
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">14</div>
+            <div className="text-2xl font-bold">{stats?.totalProjects || 0}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                Avg 2 per user
+                Avg {stats?.totalUsers ? Math.round((stats?.totalProjects || 0) / stats.totalUsers) : 0} per user
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              +2 this month
+              +{stats?.projectGrowth || 0} this month
             </p>
           </CardContent>
         </Card>
@@ -98,15 +196,15 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">57%</div>
+            <div className="text-2xl font-bold">{stats?.activeRate || 0}%</div>
             <div className="flex items-center gap-2 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <TrendingUp className={`h-3 w-3 ${(stats?.activeRateChange || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
               <Badge variant="secondary" className="text-xs">
                 User activation rate
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Increased by 12%
+              {(stats?.activeRateChange || 0) >= 0 ? 'Increased' : 'Decreased'} by {Math.abs(stats?.activeRateChange || 0)}%
             </p>
           </CardContent>
         </Card>
@@ -124,28 +222,36 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Platform version 1.0.0</span>
+              <span className="text-sm">Platform version {systemStatus?.version || '1.0.0'}</span>
               <Badge variant="secondary">Latest</Badge>
             </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Database className="h-4 w-4 text-green-600" />
+                  <Database className={`h-4 w-4 ${systemStatus?.database.health === 'healthy' ? 'text-green-600' : 'text-red-600'}`} />
                   <span className="text-sm">Database</span>
                 </div>
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  Healthy
+                <Badge className={
+                  systemStatus?.database.health === 'healthy' 
+                    ? "bg-green-100 text-green-800 border-green-200"
+                    : "bg-red-100 text-red-800 border-red-200"
+                }>
+                  {systemStatus?.database.status || 'Unknown'}
                 </Badge>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-green-600" />
+                  <Mail className={`h-4 w-4 ${systemStatus?.emailService.health === 'healthy' ? 'text-green-600' : 'text-red-600'}`} />
                   <span className="text-sm">Email Service</span>
                 </div>
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  Issues
+                <Badge className={
+                  systemStatus?.emailService.health === 'healthy' 
+                    ? "bg-green-100 text-green-800 border-green-200"
+                    : "bg-red-100 text-red-800 border-red-200"
+                }>
+                  {systemStatus?.emailService.status || 'Unknown'}
                 </Badge>
               </div>
             </div>
@@ -159,17 +265,23 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">Common administrative tasks</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="outline" className="w-full justify-start">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Manage Users
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/admin/users">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Link>
             </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Create New User
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/admin/users/create">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create New User
+              </Link>
             </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Settings className="h-4 w-4 mr-2" />
-              System Information
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/admin/settings">
+                <Settings className="h-4 w-4 mr-2" />
+                System Information
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -183,27 +295,26 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <UserPlus className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">New user registered</p>
-                <p className="text-xs text-muted-foreground">user@example.com joined the platform</p>
-              </div>
-              <span className="text-xs text-muted-foreground">2 hours ago</span>
-            </div>
-            
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                <Settings className="h-4 w-4 text-secondary-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">System maintenance completed</p>
-                <p className="text-xs text-muted-foreground">Database optimization finished successfully</p>
-              </div>
-              <span className="text-xs text-muted-foreground">1 day ago</span>
-            </div>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                    {activity.type === 'user_registered' ? (
+                      <UserPlus className="h-4 w-4 text-primary-foreground" />
+                    ) : (
+                      <Settings className="h-4 w-4 text-primary-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.title}</p>
+                    <p className="text-xs text-muted-foreground">{activity.description}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{activity.timestamp}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+            )}
           </div>
         </CardContent>
       </Card>

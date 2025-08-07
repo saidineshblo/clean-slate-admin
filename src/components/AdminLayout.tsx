@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { 
@@ -11,6 +11,7 @@ import {
   Menu
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -25,7 +26,14 @@ const navigation = [
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,23 +90,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-sm font-medium text-primary-foreground">A</span>
+                <span className="text-sm font-medium text-primary-foreground">
+                  {user?.username?.charAt(0).toUpperCase() || 'A'}
+                </span>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Admin</p>
-                <p className="text-xs text-muted-foreground">admin@example.com</p>
+                <p className="text-sm font-medium text-foreground">{user?.username || 'Admin'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email || 'admin@example.com'}</p>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
               className="w-full justify-start"
-              asChild
+              onClick={handleLogout}
             >
-              <Link to="/login">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign out
-              </Link>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
             </Button>
           </div>
         </div>
