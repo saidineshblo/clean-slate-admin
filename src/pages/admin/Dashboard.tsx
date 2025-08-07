@@ -87,6 +87,7 @@ export default function Dashboard() {
   }, []);
 
   const handleRefresh = () => {
+    console.log('Manual refresh triggered');
     fetchDashboardData();
     toast({
       title: "Dashboard Refreshed",
