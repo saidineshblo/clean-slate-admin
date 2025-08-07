@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -45,14 +45,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed positioning */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:flex lg:flex-col",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-border">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-border bg-card">
             <h1 className="text-xl font-semibold text-foreground">Admin Panel</h1>
             <Button
               variant="ghost"
@@ -67,7 +67,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const isActive = location.pathname === item.href || 
+                (item.href !== "/admin" && location.pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.name}
@@ -78,6 +79,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
+                  onClick={() => setSidebarOpen(false)} // Close mobile sidebar on navigation
                 >
                   <item.icon className="h-4 w-4" />
                   {item.name}
@@ -87,7 +89,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border bg-card">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-sm font-medium text-primary-foreground">
@@ -112,10 +114,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
         {/* Mobile header */}
-        <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm lg:hidden">
+        <div className="flex h-16 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm lg:hidden">
           <Button
             variant="outline"
             size="sm"
@@ -127,7 +129,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 p-6 bg-background overflow-auto">
           {children}
         </main>
       </div>
