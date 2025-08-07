@@ -152,6 +152,25 @@ export default function UserManagement() {
     }
   };
 
+  const handleResetPassword = async (userId: string) => {
+    try {
+      await usersApi.resetPassword(userId, {
+        send_email: true,
+        reason: "Admin requested password reset"
+      });
+      toast({
+        title: "Password Reset",
+        description: "New password has been sent to user's email.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (user: User) => {
     if (user.is_superuser) {
       return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Admin</Badge>;
@@ -302,11 +321,11 @@ export default function UserManagement() {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
                               <Edit className="h-4 w-4 mr-2" />
-                              Toggle Status
+                              {user.is_active ? 'Deactivate' : 'Activate'} User
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleResetPassword(user.id)}>
                               <Mail className="h-4 w-4 mr-2" />
-                              Send Email
+                              Reset Password
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 

@@ -116,13 +116,7 @@ export const dashboardApi = {
     active_sessions: number;
   }>('/admin/system-info'),
   
-  getRecentActivity: () => apiRequest<Array<{
-    id: string;
-    type: string;
-    title: string;
-    description: string;
-    timestamp: string;
-  }>>('/admin/recent-activity'),
+  getHealthCheck: () => apiRequest<string>('/admin/health'),
 };
 
 export const usersApi = {
@@ -192,6 +186,16 @@ export const usersApi = {
       affected_users: number;
     }>(`/admin/users/${userId}/status`, {
       method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    
+  resetPassword: (userId: string, data: { send_email: boolean; reason?: string }) => 
+    apiRequest<{
+      message: string;
+      email_sent: boolean;
+      temporary_password_sent: boolean;
+    }>(`/admin/users/${userId}/reset-password`, {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
 };
