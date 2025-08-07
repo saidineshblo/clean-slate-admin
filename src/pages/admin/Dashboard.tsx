@@ -57,15 +57,21 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching dashboard data...');
+      
       const [statsData, statusData] = await Promise.all([
         dashboardApi.getStats(),
         dashboardApi.getSystemStatus(),
       ]);
       
+      console.log('Dashboard stats:', statsData);
+      console.log('System status:', statusData);
+      
       setStats(statsData);
       setSystemStatus(statusData);
       setRecentActivity([]); // No recent activity API in your specification
     } catch (error: any) {
+      console.error('Dashboard fetch error:', error);
       toast({
         title: "Error Loading Dashboard",
         description: error.message || "Failed to load dashboard data",
