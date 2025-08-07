@@ -56,19 +56,31 @@ export const apiRequest = async <T>(
 
 // Authentication functions
 export const authApi = {
-  login: (username: string, password: string) => 
-    apiRequest<{
-      token: string;
-      user: {
-        id: string;
-        username: string;
-        email: string;
-        role: string;
-      };
-    }>('/auth/login', {
+  login: async (username: string, password: string) => {
+    const formData = new URLSearchParams();
+    formData.append('grant_type', 'password');
+    formData.append('username', username);
+    formData.append('password', password);
+
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
-    }),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.detail?.[0]?.msg || errorData.message || 'Login failed',
+        response.status,
+        errorData
+      );
+    }
+
+    return await response.json();
+  },
   
   logout: () => apiRequest<{ success: boolean }>('/auth/logout', {
     method: 'POST',

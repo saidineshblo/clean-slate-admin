@@ -49,26 +49,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (username: string, password: string): Promise<void> => {
     try {
+      // Create form data for OAuth2 format
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('username', username);
+      formData.append('password', password);
+
       const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({ username, password }),
+        body: formData,
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        throw new Error(error.detail?.[0]?.msg || error.message || 'Login failed');
       }
 
       const data = await response.json();
       
-      setToken(data.token);
+      setToken(data.access_token);
       setUser(data.user);
       
       // Store in localStorage
-      localStorage.setItem('admin_token', data.token);
+      localStorage.setItem('admin_token', data.access_token);
       localStorage.setItem('admin_user', JSON.stringify(data.user));
     } catch (error) {
       throw error;
