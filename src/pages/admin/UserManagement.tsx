@@ -84,13 +84,26 @@ export default function UserManagement() {
       if (statusFilter !== "All Users") params.is_active = statusFilter === "Active";
       
       const response = await usersApi.getAll(params);
-      setUsers(response.users);
-      setPagination({
-        total: response.total,
-        page: response.page,
-        per_page: response.per_page,
-        total_pages: response.total_pages,
-      });
+      console.log('Users API response:', response);
+      
+      if (response && response.users && Array.isArray(response.users)) {
+        setUsers(response.users);
+        setPagination({
+          total: response.total || 0,
+          page: response.page || 1,
+          per_page: response.per_page || 10,
+          total_pages: response.total_pages || 1,
+        });
+      } else {
+        console.error('Invalid response structure:', response);
+        setUsers([]);
+        setPagination({
+          total: 0,
+          page: 1,
+          per_page: 10,
+          total_pages: 1,
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error Loading Users",
