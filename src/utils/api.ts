@@ -22,10 +22,10 @@ export const apiRequest = async <T>(
   options: RequestInit = {}
 ): Promise<T> => {
   const token = localStorage.getItem('admin_token');
-  
+
   console.log('Making API request to:', `${API_BASE_URL}${endpoint}`);
   console.log('Auth token available:', !!token);
-  
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -37,9 +37,9 @@ export const apiRequest = async <T>(
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
+
     console.log('API Response status:', response.status);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
@@ -89,11 +89,11 @@ export const authApi = {
 
     return await response.json();
   },
-  
+
   logout: () => apiRequest<{ success: boolean }>('/auth/logout', {
     method: 'POST',
   }),
-  
+
   getCurrentUser: () => apiRequest<{
     id: string;
     username: string;
@@ -114,7 +114,7 @@ export const dashboardApi = {
     users_this_month: number;
     avg_projects_per_user: number;
   }>('/admin/dashboard'),
-  
+
   getSystemStatus: () => apiRequest<{
     platform_version: string;
     database_status: string;
@@ -123,20 +123,20 @@ export const dashboardApi = {
     uptime: string;
     active_sessions: number;
   }>('/admin/system-info'),
-  
+
   getHealthCheck: () => apiRequest<string>('/admin/health'),
 };
 
 export const usersApi = {
-  getAll: (params?: { 
-    page?: number; 
-    per_page?: number; 
-    query?: string; 
+  getAll: (params?: {
+    page?: number;
+    per_page?: number;
+    query?: string;
     is_active?: boolean;
     is_superuser?: boolean;
     sort_by?: string;
     sort_order?: string;
-  }) => 
+  }) =>
     apiRequest<{
       users: Array<{
         id: string;
@@ -156,7 +156,7 @@ export const usersApi = {
       has_prev: boolean;
       total_pages: number;
     }>(`/admin/users${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
-  
+
   create: (userData: {
     username: string;
     email: string;
@@ -178,7 +178,7 @@ export const usersApi = {
     method: 'POST',
     body: JSON.stringify(userData),
   }),
-  
+
   delete: (userId: string) => apiRequest<{
     success: boolean;
     message: string;
@@ -186,8 +186,8 @@ export const usersApi = {
   }>(`/admin/users/${userId}`, {
     method: 'DELETE',
   }),
-  
-  toggleStatus: (userId: string, data: { is_active: boolean; reason?: string }) => 
+
+  toggleStatus: (userId: string, data: { is_active: boolean; reason?: string }) =>
     apiRequest<{
       success: boolean;
       message: string;
@@ -196,8 +196,8 @@ export const usersApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    
-  resetPassword: (userId: string, data: { send_email: boolean; reason?: string }) => 
+
+  resetPassword: (userId: string, data: { send_email: boolean; reason?: string }) =>
     apiRequest<{
       message: string;
       email_sent: boolean;
@@ -206,4 +206,49 @@ export const usersApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+};
+
+// User Analytics API
+export interface ServiceGenerationStats {
+  service_name: string;
+  generation_count: number;
+  total_cost: number;
+}
+
+export interface UserAnalyticsStats {
+  user_id: string;
+  username: string;
+  email: string;
+  project_count: number;
+  total_generations: number;
+  services_breakdown: ServiceGenerationStats[];
+  total_cost: number;
+  created_at: string;
+  is_active: boolean;
+}
+
+export interface UserAnalyticsResponse {
+  users: UserAnalyticsStats[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  grand_total_cost: number;
+  grand_total_generations: number;
+}
+
+export const analyticsApi = {
+  getUserAnalytics: (params?: {
+    page?: number;
+    per_page?: number;
+    sort_by?: string;
+    sort_order?: string;
+  }) => {
+    const queryParams = params ? `?${new URLSearchParams(
+      Object.entries(params).filter(([_, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
+    ).toString()}` : '';
+    return apiRequest<UserAnalyticsResponse>(`/admin/users/analytics${queryParams}`);
+  },
 };

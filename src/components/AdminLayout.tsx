@@ -2,13 +2,14 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserPlus, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  UserPlus,
+  Settings,
   LogOut,
-  Menu
+  Menu,
+  BarChart3
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +21,7 @@ interface AdminLayoutProps {
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "User Management", href: "/admin/users", icon: Users },
+  { name: "User Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Create User", href: "/admin/users/create", icon: UserPlus },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
@@ -39,7 +41,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -67,7 +69,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href || 
+              const isActive = location.pathname === item.href ||
                 (item.href !== "/admin" && location.pathname.startsWith(item.href));
               return (
                 <Link
