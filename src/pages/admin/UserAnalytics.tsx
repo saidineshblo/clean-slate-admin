@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 // Service display names and colors
 const SERVICE_DISPLAY: Record<string, { name: string; color: string }> = {
     nano_banana_pro: { name: "Nano Banana Pro", color: "bg-purple-100 text-purple-800 border-purple-200" },
-    seedream: { name: "Seedream 4", color: "bg-blue-100 text-blue-800 border-blue-200" },
+    seedream: { name: "Seedream 4.5", color: "bg-blue-100 text-blue-800 border-blue-200" },
     flux_kontext: { name: "Flux Kontext", color: "bg-green-100 text-green-800 border-green-200" },
     nano_banana: { name: "Nano Banana", color: "bg-orange-100 text-orange-800 border-orange-200" },
     nano_banana_no_location: { name: "Nano Banana (No Location)", color: "bg-amber-100 text-amber-800 border-amber-200" },
