@@ -41,6 +41,11 @@ export const apiRequest = async <T>(
     console.log('API Response status:', response.status);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Dispatch event so AuthContext can log the user out automatically
+        window.dispatchEvent(new Event('unauthorized_access'));
+      }
+
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         errorData.message || `API request failed with status ${response.status}`,

@@ -347,89 +347,82 @@ export default function UserManagement() {
                     </TableRow>
                   ))
                 ) : users.length > 0 ? (
-                  <AnimatePresence mode="popLayout">
-                    {users.map((user, index) => (
-                      <motion.tr
-                        key={user.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-white/5 hover:bg-white/5 transition-colors group"
-                        style={{ display: 'table-row' }}
-                      >
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/80 to-purple-600/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 ring-2 ring-white/10">
-                              <span className="text-sm font-bold text-white">
-                                {user.username.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-semibold text-white/90 group-hover:text-white transition-colors">{user.username}</div>
-                              <div className="text-sm text-muted-foreground transition-colors group-hover:text-white/70">{user.email}</div>
-                            </div>
+                  users.map((user) => (
+                    <TableRow
+                      key={user.id}
+                      className="border-white/5 hover:bg-white/5 transition-colors group"
+                    >
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/80 to-purple-600/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 ring-2 ring-white/10">
+                            <span className="text-sm font-bold text-white">
+                              {user.username.charAt(0).toUpperCase()}
+                            </span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(user)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 text-white/80">
-                            <span className="font-semibold">{user.project_count}</span>
-                            <span className="text-xs text-muted-foreground">projects</span>
+                          <div>
+                            <div className="font-semibold text-white/90 group-hover:text-white transition-colors">{user.username}</div>
+                            <div className="text-sm text-muted-foreground transition-colors group-hover:text-white/70">{user.email}</div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-white/80 font-medium">
-                            {new Date(user.created_at).toLocaleDateString(undefined, {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right pr-6">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-white hover:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white transition-colors">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="glass-panel border-white/10 bg-background/95 min-w-[180px]">
-                              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Actions
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator className="bg-white/10" />
-                              <DropdownMenuItem
-                                onClick={() => handleToggleStatus(user.id)}
-                                className="cursor-pointer focus:bg-white/10 focus:text-white"
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                {user.is_active ? 'Deactivate User' : 'Activate User'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleResetPassword(user.id)}
-                                className="cursor-pointer focus:bg-white/10 focus:text-white"
-                              >
-                                <Mail className="h-4 w-4 mr-2" />
-                                Reset Password
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-white/10" />
-                              <DropdownMenuItem
-                                className="text-red-400 focus:bg-red-500/20 focus:text-red-300 cursor-pointer"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete User
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(user)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-white/80">
+                          <span className="font-semibold">{user.project_count}</span>
+                          <span className="text-xs text-muted-foreground">projects</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-white/80 font-medium">
+                          {new Date(user.created_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-white hover:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white transition-colors">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="glass-panel border-white/10 bg-background/95 min-w-[180px]">
+                            <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Actions
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuItem
+                              onClick={() => handleToggleStatus(user.id)}
+                              className="cursor-pointer focus:bg-white/10 focus:text-white"
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              {user.is_active ? 'Deactivate User' : 'Activate User'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleResetPassword(user.id)}
+                              className="cursor-pointer focus:bg-white/10 focus:text-white"
+                            >
+                              <Mail className="h-4 w-4 mr-2" />
+                              Reset Password
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuItem
+                              className="text-red-400 focus:bg-red-500/20 focus:text-red-300 cursor-pointer"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-48 text-center text-muted-foreground border-white/5">

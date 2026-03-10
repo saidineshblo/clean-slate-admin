@@ -36,15 +36,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token on app load
     const storedToken = localStorage.getItem('admin_token');
     const storedUser = localStorage.getItem('admin_user');
-    
-    if (storedToken && storedUser) {
+
+    // Validate JWT token expiry
+    const isTokenValid = (token: string) => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          return false;
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    if (storedToken && storedUser && isTokenValid(storedToken)) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+    } else {
+      // Clear if invalid or expired
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
     }
     setIsLoading(false);
+
+    // Add interceptor listener for 401s from the API
+    const handleUnauthorized = () => {
+      logout();
+    };
+
+    window.addEventListener('unauthorized_access', handleUnauthorized);
+    return () => window.removeEventListener('unauthorized_access', handleUnauthorized);
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {
@@ -69,10 +93,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       setToken(data.access_token);
       setUser(data.user);
-      
+
       // Store in localStorage
       localStorage.setItem('admin_token', data.access_token);
       localStorage.setItem('admin_user', JSON.stringify(data.user));
