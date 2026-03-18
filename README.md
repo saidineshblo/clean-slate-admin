@@ -1,73 +1,90 @@
-# Welcome to your Lovable project
+# Kubrik Admin Dashboard
 
-## Project info
+Administration panel for the [Kubrik](../kubrik.frontend/) platform by **StudioBlo**.
 
-**URL**: https://lovable.dev/projects/241ea6af-44c1-4a90-b08c-4ec03beee2e4
+Provides user management, analytics, and system administration for the Kubrik AI-powered movie pre-production platform.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Dashboard** -- Overview of platform metrics and activity
+- **User Management** -- Create, edit, and manage user accounts
+- **User Analytics** -- Usage statistics and engagement metrics
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/241ea6af-44c1-4a90-b08c-4ec03beee2e4) and start prompting.
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 18 + TypeScript |
+| Build | Vite 5 (SWC) |
+| Styling | Tailwind CSS + shadcn/ui |
+| State | TanStack Query v5 |
+| Routing | React Router 6 |
+| Charts | Recharts |
 
-Changes made via Lovable will be committed automatically to this repo.
+## Prerequisites
 
-**Use your preferred IDE**
+- **Node.js** 18+ and npm
+- **Running backend API** -- see [kubrik_backend](../kubrik_backend/)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Install dependencies
+npm install
 
-Follow these steps:
+# Copy environment file
+cp .env.example .env
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server (port 8080)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```env
+VITE_API_BASE_URL=http://localhost:8001/api/v1
+VITE_APP_NAME=Kubrik Admin
+```
 
-**Use GitHub Codespaces**
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_BASE_URL` | Yes | Backend API base URL (with `/api/v1` prefix) |
+| `VITE_APP_NAME` | No | Application display name |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+  App.tsx              # Root component with routing
+  main.tsx             # Entry point
+  components/
+    ui/                # shadcn/ui primitives
+  pages/
+    Login.tsx          # Admin login
+    admin/
+      Dashboard.tsx    # Main dashboard with metrics
+      UserManagement.tsx
+      UserAnalytics.tsx
+      CreateUser.tsx
+  contexts/            # React contexts (auth, theme)
+  hooks/               # Custom hooks
+  lib/                 # Utilities
+  utils/               # Helper functions
+```
 
-This project is built with:
+## Available Scripts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
 
-## How can I deploy this project?
+## Docker Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/241ea6af-44c1-4a90-b08c-4ec03beee2e4) and click on Share -> Publish.
+The admin dashboard runs as the `frontend_admin` service in Docker Compose on port 8083. See the root [docker-compose.yml](../docker-compose.yml).
 
-## Can I connect a custom domain to my Lovable project?
+## License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Proprietary -- StudioBlo. All rights reserved.
